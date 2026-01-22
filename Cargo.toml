@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "week01-text-stats",
+    "week01-ownership-store",
+]
+resolver = "3"
