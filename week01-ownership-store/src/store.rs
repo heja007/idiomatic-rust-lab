@@ -1,6 +1,7 @@
 use crate::{error::StoreError, model::Record};
 use std::collections::HashMap;
 
+// codex resume 019bfbda-3bac-7782-af07-d580ec241043
 pub struct Store {
     map: HashMap<String, Record>,
 }
