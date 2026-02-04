@@ -1,25 +1,29 @@
-mod test_server;
-use test_server::spawn_app;
-
-use reqwest::Client;
+use axum::body::{Body, to_bytes};
+use axum::http::Request;
 use serde_json::json;
+use tower::ServiceExt;
 
 #[tokio::test]
 async fn uniq_basic_collapsing() {
     let app = week01_ownership_store::http::router();
-    let (addr, _handle) = spawn_app(app).await;
-    let url = format!("http://{}/v1/uniq", addr);
-
-    let client = Client::new();
     let body = json!({
-          "text": "a\na\nb\nb\nb\nc\n",
-          "all": false
-      });
+        "text": "a\na\nb\nb\nb\nc\n",
+        "all": false
+    })
+    .to_string();
 
-    let resp = client.post(url).json(&body).send().await.unwrap();
+    let req = Request::builder()
+        .method("POST")
+        .uri("/v1/uniq")
+        .header("content-type", "application/json")
+        .body(Body::from(body))
+        .unwrap();
+
+    let resp = app.oneshot(req).await.unwrap();
     assert!(resp.status().is_success());
 
-    let data: serde_json::Value = resp.json().await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let data: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(data["text"], "a\nb\nc\n");
     assert_eq!(data["removed"], 3);
 }
@@ -27,19 +31,24 @@ async fn uniq_basic_collapsing() {
 #[tokio::test]
 async fn uniq_all_true() {
     let app = week01_ownership_store::http::router();
-    let (addr, _handle) = spawn_app(app).await;
-    let url = format!("http://{}/v1/uniq", addr);
-
-    let client = Client::new();
     let body = json!({
-          "text": "a\na\nb\nb\nb\nc\n",
-          "all": true
-      });
+        "text": "a\na\nb\nb\nb\nc\n",
+        "all": true
+    })
+    .to_string();
 
-    let resp = client.post(url).json(&body).send().await.unwrap();
+    let req = Request::builder()
+        .method("POST")
+        .uri("/v1/uniq")
+        .header("content-type", "application/json")
+        .body(Body::from(body))
+        .unwrap();
+
+    let resp = app.oneshot(req).await.unwrap();
     assert!(resp.status().is_success());
 
-    let data: serde_json::Value = resp.json().await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let data: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(data["text"], "a\nb\nc\n");
     assert_eq!(data["removed"], 3);
 }
